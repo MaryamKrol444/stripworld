@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://maryamkrol444.github.io/stripworld/sitemap.xml
