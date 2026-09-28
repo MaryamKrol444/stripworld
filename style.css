@@ -1,41 +1,54 @@
 /* ==========================================================================
-   StripWorld - Clean, Mobile-First, Modern Stylesheet
-   Responsive, High-Performance, Accessible (WCAG AA Compliant)
+   StripWorld — Mobile-First Responsive Stylesheet
+   Fixes the 720px grid blowout that pushed all text off mobile screens.
+   Strategy: fix root causes (no horizontal clipping anywhere), then verify.
    ========================================================================== */
 
+/* --------------------------------------------------------------------------
+   1. Design tokens
+   -------------------------------------------------------------------------- */
 :root {
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
   --bg-tertiary: #334155;
   --bg-card: #1e293b;
   --bg-card-hover: #24344d;
+  --bg-deep: #0b0f19;
   --border-color: #334155;
-  --border-focus: #38bdf8;
-  
+  --border-strong: #475569;
+
   --text-primary: #f8fafc;
   --text-secondary: #cbd5e1;
   --text-muted: #94a3b8;
-  
+  --text-faint: #64748b;
+
   --accent-primary: #f43f5e;
   --accent-primary-hover: #e11d48;
   --accent-secondary: #38bdf8;
   --accent-amber: #f59e0b;
   --accent-emerald: #10b981;
   --accent-purple: #a855f7;
-  
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+
+  /* Fluid spacing: shrinks on small screens, grows on large ones */
   --container-width: 1120px;
+  --gutter: clamp(1rem, 3.5vw, 2rem);
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+
+  /* Height of the fixed promo bar, kept in sync by site.js */
+  --sticky-bar-h: 68px;
 }
 
-/* Reset & Base */
+/* --------------------------------------------------------------------------
+   2. Reset & base
+   -------------------------------------------------------------------------- */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -43,25 +56,42 @@
 }
 
 html {
-  font-size: 16px;
+  /* 100% (not a fixed 16px) so the user's own font-size preference is honoured */
+  font-size: 100%;
   line-height: 1.65;
   color: var(--text-primary);
   background-color: var(--bg-primary);
   font-family: var(--font-sans);
-  scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  /* Anchors must not hide under the sticky header */
+  scroll-padding-top: 5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding-bottom: 75px; /* space for sticky bar */
-  overflow-x: hidden;
+  /* NOTE: overflow-x is deliberately NOT hidden. Clipping was masking the
+     overflow bug and cutting text off-screen instead of fixing it. */
+  padding-bottom: calc(var(--sticky-bar-h) + 1rem);
+  overflow-wrap: break-word;
+}
+
+img, svg, video, iframe {
+  max-width: 100%;
 }
 
 img {
-  max-width: 100%;
   height: auto;
   display: block;
   border-radius: var(--radius-md);
@@ -74,22 +104,25 @@ a {
   transition: color 0.15s ease, text-decoration-color 0.15s ease;
 }
 
-a:hover, a:focus {
-  color: #7dd3fc;
-  text-decoration-color: #7dd3fc;
+a:hover { color: #7dd3fc; text-decoration-color: #7dd3fc; }
+
+:focus-visible {
+  outline: 3px solid var(--accent-secondary);
+  outline-offset: 2px;
+  border-radius: 3px;
 }
 
+/* --------------------------------------------------------------------------
+   3. Typography — fluid sizes, safe on long/foreign strings
+   -------------------------------------------------------------------------- */
 p {
   margin-bottom: 1.35rem;
   color: var(--text-secondary);
-  font-size: 1.05rem;
+  font-size: clamp(1rem, 0.97rem + 0.18vw, 1.05rem);
   line-height: 1.75;
 }
 
-strong {
-  color: var(--text-primary);
-  font-weight: 600;
-}
+strong { color: var(--text-primary); font-weight: 600; }
 
 h1, h2, h3, h4, h5, h6 {
   color: var(--text-primary);
@@ -98,65 +131,112 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 1rem;
   font-weight: 700;
   letter-spacing: -0.015em;
+  /* Long tokens such as "stripchat free 50 tokens signing up" must never
+     push the layout wider than the screen. */
+  overflow-wrap: anywhere;
 }
 
 h1 {
-  font-size: clamp(1.85rem, 4vw, 2.65rem);
+  font-size: clamp(1.7rem, 1.2rem + 2.4vw, 2.65rem);
   line-height: 1.18;
   margin-top: 0.5rem;
   margin-bottom: 1.25rem;
-  background: linear-gradient(135deg, #ffffff 40%, #cbd5e1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+}
+
+/* Only use the gradient headline where background-clip:text is supported,
+   otherwise the transparent fill makes the H1 invisible. */
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  h1 {
+    background: linear-gradient(135deg, #ffffff 40%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
 }
 
 h2 {
-  font-size: clamp(1.4rem, 2.5vw, 1.85rem);
+  font-size: clamp(1.35rem, 1.15rem + 1vw, 1.85rem);
   padding-bottom: 0.4rem;
   border-bottom: 1px solid var(--border-color);
   margin-top: 2.5rem;
 }
 
-h3 {
-  font-size: clamp(1.15rem, 2vw, 1.4rem);
-  margin-top: 1.75rem;
-}
-
-h4 {
-  font-size: 1.15rem;
-  color: #e2e8f0;
-}
+h3 { font-size: clamp(1.12rem, 1.05rem + 0.4vw, 1.4rem); margin-top: 1.75rem; }
+h4 { font-size: 1.12rem; color: #e2e8f0; }
 
 ul, ol {
   margin-bottom: 1.4rem;
-  padding-left: 1.6rem;
+  padding-left: 1.5rem;
   color: var(--text-secondary);
 }
 
-li {
-  margin-bottom: 0.5rem;
-  line-height: 1.65;
-}
+li { margin-bottom: 0.5rem; line-height: 1.65; overflow-wrap: anywhere; }
 
-/* Containers & Layout */
+code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+/* --------------------------------------------------------------------------
+   4. Layout
+   -------------------------------------------------------------------------- */
 .container {
   width: 100%;
   max-width: var(--container-width);
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1.25rem;
-  padding-right: 1.25rem;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
 }
 
-/* Header & Top Bar */
+/* THE ROOT CAUSE OF THE MOBILE BUG:
+   `1fr` is really `minmax(auto, 1fr)`. The "auto" minimum is the item's
+   min-content size, and the 720px-wide <img> made that 720px — so the whole
+   column stayed 720px wide on a 320px phone. `minmax(0, 1fr)` removes the
+   content-based floor and lets `max-width:100%` actually do its job. */
+.content-wrapper {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem;
+  margin-top: 1.5rem;
+  margin-bottom: 3.5rem;
+}
+
+@media (min-width: 960px) {
+  .content-wrapper {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    align-items: start;
+  }
+}
+
+.main-content {
+  min-width: 0; /* grid items default to min-width:auto — must be reset */
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 1.15rem;
+  box-shadow: var(--shadow-md);
+}
+
+@media (min-width: 560px) {
+  .main-content { padding: 1.75rem 1.6rem; }
+}
+
+@media (min-width: 1024px) {
+  .main-content { padding: 2rem 2.25rem; }
+}
+
+.main-content > *:first-child { margin-top: 0; }
+
+/* --------------------------------------------------------------------------
+   5. Header & navigation
+   -------------------------------------------------------------------------- */
 .age-banner {
   background-color: #0b0f19;
   border-bottom: 1px solid #1e293b;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
-  padding: 0.45rem 1rem;
+  padding: 0.5rem var(--gutter);
   text-align: center;
+  text-wrap: balance;
 }
+
+.age-banner strong { color: var(--text-secondary); }
 
 .site-header {
   background-color: rgba(15, 23, 42, 0.95);
@@ -170,51 +250,73 @@ li {
 .nav-container {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0.85rem 0;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding-block: 0.75rem;
 }
 
+.nav-container > nav { margin-left: auto; min-width: 0; }
 .brand-logo {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   text-decoration: none;
-  font-size: 1.3rem;
+  font-size: clamp(1.1rem, 1rem + 0.6vw, 1.3rem);
   font-weight: 800;
   color: #ffffff;
   letter-spacing: -0.02em;
+  min-height: 44px; /* comfortable tap target */
 }
 
 .brand-badge {
   background: linear-gradient(135deg, var(--accent-primary), #ec4899);
   color: #ffffff;
-  font-size: 0.7rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  padding: 0.15rem 0.45rem;
+  padding: 0.2rem 0.45rem;
   border-radius: var(--radius-sm);
   text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.mobile-nav-toggle {
+  display: none;
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 1.15rem;
+  line-height: 1;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .nav-menu {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 0.25rem;
   list-style: none;
-  margin: 0;
-  padding: 0;
 }
 
 .nav-menu a {
+  display: block;
   color: var(--text-secondary);
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-weight: 500;
   text-decoration: none;
-  padding: 0.35rem 0.5rem;
+  padding: 0.6rem 0.55rem;
   border-radius: var(--radius-sm);
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
 }
 
-.nav-menu a:hover, .nav-menu a.active {
+.nav-menu a:hover,
+.nav-menu a.active {
   color: #ffffff;
   background-color: var(--bg-tertiary);
 }
@@ -223,98 +325,99 @@ li {
   background: linear-gradient(135deg, var(--accent-primary), #e11d48);
   color: #ffffff !important;
   font-weight: 600 !important;
-  padding: 0.45rem 0.95rem !important;
+  padding: 0.6rem 0.9rem !important;
   border-radius: var(--radius-md) !important;
   box-shadow: 0 2px 4px rgba(244, 63, 94, 0.25);
+  white-space: nowrap;
 }
 
-.nav-cta-btn:hover {
-  background: linear-gradient(135deg, #fb7185, #f43f5e) !important;
-  transform: translateY(-1px);
+.nav-cta-btn:hover { background: linear-gradient(135deg, #fb7185, #f43f5e) !important; }
+
+/* Mobile nav: a collapsible panel in normal flow (not absolutely positioned),
+   so it can never overlap or escape the header. */
+@media (max-width: 1000px) {
+  .mobile-nav-toggle { display: flex; }
+
+  .nav-container > nav {
+    order: 3;
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+
+  .nav-menu {
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 0.5rem;
+    background-color: #0b1120;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    /* Keep very tall menus usable on short screens */
+    max-height: calc(100vh - 9rem);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nav-menu.is-open { display: flex; }
+
+  .nav-menu a {
+    padding: 0.8rem 0.75rem;
+    font-size: 1rem;
+    white-space: normal;
+    border-radius: var(--radius-sm);
+  }
+
+  .nav-cta-btn { text-align: center; margin-top: 4px; }
 }
 
-/* Mobile Nav Toggle */
-.mobile-nav-toggle {
-  display: none;
-  background: none;
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  font-size: 1.25rem;
-  padding: 0.35rem 0.65rem;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
+/* Desktop nav. The full menu is ~1160px wide, which is wider than the
+   1120px container, so it always gets its own centred row below the logo
+   instead of colliding with it or wrapping mid-word. */
+@media (min-width: 1001px) {
+  .nav-container > nav {
+    order: 3;
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+
+  .nav-menu {
+    justify-content: center;
+    flex-wrap: wrap;
+    row-gap: 0.2rem;
+    gap: 0;
+  }
+
+  .nav-menu a { font-size: 0.85rem; padding-inline: 0.5rem; }
+  .nav-cta-btn { margin-left: 0.5rem; }
 }
 
-/* Breadcrumbs */
-.breadcrumb-nav {
-  margin: 1.25rem 0 0.5rem 0;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
+/* If JavaScript is unavailable, show the menu rather than hiding navigation. */
+.no-js .nav-menu { display: flex; }
+
+/* --------------------------------------------------------------------------
+   6. Breadcrumbs
+   -------------------------------------------------------------------------- */
+.breadcrumb-nav { margin: 1.25rem 0 0.5rem; font-size: 0.85rem; color: var(--text-muted); }
 
 .breadcrumb-list {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   list-style: none;
-  padding: 0;
   gap: 0.4rem;
+  line-height: 1.6;
 }
 
-.breadcrumb-list li::after {
-  content: "/";
-  margin-left: 0.4rem;
-  color: var(--text-muted);
-}
+.breadcrumb-list li::after { content: "/"; margin-left: 0.4rem; color: var(--text-faint); }
+.breadcrumb-list li:last-child::after { content: ""; }
+.breadcrumb-list a { color: var(--text-muted); text-decoration: none; }
+.breadcrumb-list a:hover { color: var(--accent-secondary); text-decoration: underline; }
 
-.breadcrumb-list li:last-child::after {
-  content: "";
-}
-
-.breadcrumb-list a {
-  color: var(--text-muted);
-  text-decoration: none;
-}
-
-.breadcrumb-list a:hover {
-  color: var(--accent-secondary);
-}
-
-/* Page Layout */
-.content-wrapper {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-  margin-top: 1.5rem;
-  margin-bottom: 3.5rem;
-}
-
-@media (min-width: 960px) {
-  .content-wrapper {
-    grid-template-columns: minmax(0, 1fr) 300px;
-  }
-}
-
-.main-content {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: 2rem 2.25rem;
-  box-shadow: var(--shadow-md);
-}
-
-@media (max-width: 640px) {
-  .main-content {
-    padding: 1.25rem 1rem;
-  }
-}
-
-/* Sidebar */
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
+/* --------------------------------------------------------------------------
+   7. Sidebar
+   -------------------------------------------------------------------------- */
+.sidebar { display: flex; flex-direction: column; gap: 1.5rem; min-width: 0; }
 
 .sidebar-widget {
   background-color: var(--bg-card);
@@ -325,88 +428,68 @@ li {
 
 .sidebar-widget h3 {
   margin-top: 0;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--border-color);
 }
 
-.sidebar-links {
-  list-style: none;
-  padding: 0;
-  margin: 0.75rem 0 0 0;
-}
-
-.sidebar-links li {
-  margin-bottom: 0.65rem;
-}
-
+.sidebar-links { list-style: none; padding: 0; margin: 0.75rem 0 0; }
+.sidebar-links li { margin-bottom: 0.35rem; }
 .sidebar-links a {
   display: block;
   font-size: 0.92rem;
   color: var(--text-secondary);
   text-decoration: none;
-  padding: 0.35rem 0.5rem;
+  padding: 0.55rem 0.6rem;
   border-radius: var(--radius-sm);
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.sidebar-links a:hover {
-  background-color: var(--bg-tertiary);
-  color: var(--accent-secondary);
-  padding-left: 0.75rem;
-}
+.sidebar-links a:hover { background-color: var(--bg-tertiary); color: var(--accent-secondary); }
 
-/* Hero & Featured CTAs */
+/* --------------------------------------------------------------------------
+   8. Hero, CTA and alert boxes
+   -------------------------------------------------------------------------- */
 .hero-box {
   background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
   border: 1px solid #334155;
   border-left: 4px solid var(--accent-primary);
   border-radius: var(--radius-md);
-  padding: 1.5rem;
+  padding: 1.15rem;
   margin-bottom: 2rem;
 }
 
-.hero-box-title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #ffffff;
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-}
+@media (min-width: 560px) { .hero-box { padding: 1.5rem; } }
+
+.hero-box-title { font-size: clamp(1.1rem, 1rem + 0.4vw, 1.25rem); font-weight: 700; color: #ffffff; margin: 0 0 0.5rem; }
 
 .cta-box {
   background: linear-gradient(135deg, #1e293b 0%, #1e1b4b 100%);
   border: 1px solid #4338ca;
   border-radius: var(--radius-lg);
-  padding: 1.75rem;
+  padding: 1.5rem 1.15rem;
   margin: 2.25rem 0;
   text-align: center;
   box-shadow: 0 4px 14px rgba(67, 56, 202, 0.25);
 }
 
-.cta-box h3 {
-  margin-top: 0;
-  color: #ffffff;
-  font-size: 1.4rem;
-}
+@media (min-width: 560px) { .cta-box { padding: 1.75rem; } }
 
-.cta-box p {
-  color: #e0e7ff;
-  max-width: 650px;
-  margin: 0.5rem auto 1.25rem auto;
-}
+.cta-box h3 { margin-top: 0; color: #ffffff; font-size: clamp(1.2rem, 1.1rem + 0.5vw, 1.4rem); }
+.cta-box p { color: #e0e7ff; max-width: 650px; margin: 0.5rem auto 1.25rem; }
 
 .cta-btn-large {
   display: inline-block;
   background: linear-gradient(135deg, var(--accent-primary), #e11d48);
   color: #ffffff !important;
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 0.95rem + 0.3vw, 1.1rem);
   font-weight: 700;
   text-decoration: none !important;
-  padding: 0.85rem 2rem;
+  padding: 0.85rem 1.5rem;
   border-radius: var(--radius-md);
   box-shadow: 0 4px 12px rgba(244, 63, 94, 0.4);
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  max-width: 100%;
 }
 
 .cta-btn-large:hover {
@@ -415,81 +498,53 @@ li {
   box-shadow: 0 6px 16px rgba(244, 63, 94, 0.5);
 }
 
-.cta-subtext {
-  font-size: 0.82rem;
-  color: #94a3b8;
-  margin-top: 0.75rem;
-  margin-bottom: 0;
-}
+.cta-subtext { font-size: 0.82rem; color: var(--text-muted); margin-top: 0.75rem; margin-bottom: 0; }
 
-/* Warning & Alert Boxes */
 .alert-box {
   border-radius: var(--radius-md);
-  padding: 1.25rem 1.5rem;
+  padding: 1.1rem 1.15rem;
   margin: 1.75rem 0;
   border-left: 4px solid;
 }
 
-.alert-warning {
-  background-color: rgba(245, 158, 11, 0.08);
-  border-color: var(--accent-amber);
-}
+@media (min-width: 560px) { .alert-box { padding: 1.25rem 1.5rem; } }
 
-.alert-warning h4 {
-  color: #fbbf24;
+.alert-warning { background-color: rgba(245, 158, 11, 0.08); border-color: var(--accent-amber); }
+.alert-warning h4 { color: #fbbf24; }
+.alert-danger { background-color: rgba(244, 63, 94, 0.08); border-color: var(--accent-primary); }
+.alert-danger h4 { color: #fda4af; }
+.alert-info { background-color: rgba(56, 189, 248, 0.08); border-color: var(--accent-secondary); }
+.alert-info h4 { color: #7dd3fc; }
+
+.alert-box h4 {
   margin-top: 0;
   margin-bottom: 0.4rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  overflow-wrap: anywhere;
 }
 
-.alert-danger {
-  background-color: rgba(244, 63, 94, 0.08);
-  border-color: var(--accent-primary);
-}
+.alert-box p:last-child { margin-bottom: 0; }
 
-.alert-danger h4 {
-  color: #fda4af;
-  margin-top: 0;
-  margin-bottom: 0.4rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.alert-info {
-  background-color: rgba(56, 189, 248, 0.08);
-  border-color: var(--accent-secondary);
-}
-
-.alert-info h4 {
-  color: #7dd3fc;
-  margin-top: 0;
-  margin-bottom: 0.4rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.alert-box p:last-child {
-  margin-bottom: 0;
-}
-
-/* Steps Grid */
+/* --------------------------------------------------------------------------
+   9. Steps grid
+   minmax(min(260px,100%),1fr) — the min() keeps the track from forcing the
+   page wider than a 320px viewport.
+   -------------------------------------------------------------------------- */
 .steps-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
   gap: 1.25rem;
   margin: 1.75rem 0;
 }
 
 .step-card {
+  min-width: 0;
   background-color: var(--bg-tertiary);
-  border: 1px solid #475569;
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   padding: 1.25rem;
-  position: relative;
 }
 
 .step-number {
@@ -505,21 +560,18 @@ li {
   margin-bottom: 0.75rem;
 }
 
-.step-card h4 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-  color: #ffffff;
-}
+.step-card h4 { margin-top: 0; margin-bottom: 0.5rem; color: #ffffff; }
+.step-card p { font-size: 0.95rem; margin-bottom: 0; }
 
-.step-card p {
-  font-size: 0.95rem;
-  margin-bottom: 0;
-}
-
-/* Comparison Tables */
+/* --------------------------------------------------------------------------
+   10. Tables — horizontally scrollable instead of overflowing the page
+   -------------------------------------------------------------------------- */
 .table-responsive {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
   margin: 1.75rem 0;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
@@ -527,58 +579,53 @@ li {
 
 table {
   width: 100%;
+  min-width: 34rem; /* readable columns; the wrapper scrolls */
   border-collapse: collapse;
   text-align: left;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
-thead {
-  background-color: #0b0f19;
-}
+@media (min-width: 768px) { table { min-width: 0; font-size: 0.95rem; } }
+
+thead { background-color: #0b0f19; }
 
 th, td {
-  padding: 0.85rem 1rem;
+  padding: 0.8rem 0.85rem;
   border-bottom: 1px solid var(--border-color);
+  overflow-wrap: anywhere;
 }
 
 th {
   color: #ffffff;
   font-weight: 600;
   text-transform: uppercase;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   letter-spacing: 0.05em;
 }
 
-tr:nth-child(even) {
-  background-color: rgba(255, 255, 255, 0.02);
-}
+tr:nth-child(even) { background-color: rgba(255, 255, 255, 0.02); }
+tr:last-child td { border-bottom: none; }
 
-tr:last-child td {
-  border-bottom: none;
-}
-
-/* FAQ Accordion / Section */
-.faq-section {
-  margin-top: 3rem;
-  padding-top: 1.5rem;
-  border-top: 2px solid var(--border-color);
-}
+/* --------------------------------------------------------------------------
+   11. FAQ / author box
+   -------------------------------------------------------------------------- */
+.faq-section { margin-top: 3rem; padding-top: 1.5rem; border-top: 2px solid var(--border-color); }
 
 .faq-item {
   background-color: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   margin-bottom: 1rem;
-  padding: 1.25rem 1.5rem;
+  padding: 1.15rem;
   transition: border-color 0.2s ease;
 }
 
-.faq-item:hover {
-  border-color: #475569;
-}
+@media (min-width: 560px) { .faq-item { padding: 1.25rem 1.5rem; } }
+
+.faq-item:hover { border-color: var(--border-strong); }
 
 .faq-question {
-  font-size: 1.15rem;
+  font-size: clamp(1.05rem, 1rem + 0.25vw, 1.15rem);
   font-weight: 700;
   color: #ffffff;
   margin-top: 0;
@@ -586,34 +633,29 @@ tr:last-child td {
   display: flex;
   align-items: flex-start;
   gap: 0.6rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
-.faq-question::before {
-  content: "Q.";
-  color: var(--accent-primary);
-  font-weight: 800;
-}
+.faq-question::before { content: "Q."; color: var(--accent-primary); font-weight: 800; flex-shrink: 0; }
+.faq-answer > :last-child { margin-bottom: 0; }
 
-.faq-answer p:last-child {
-  margin-bottom: 0;
-}
-
-/* Author Box & Metadata */
 .author-meta-box {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 1rem;
   background-color: #0b0f19;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 1rem 1.25rem;
+  padding: 1rem 1.15rem;
   margin: 1.5rem 0;
   font-size: 0.9rem;
+  min-width: 0;
 }
 
 .author-avatar {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--accent-secondary), var(--accent-purple));
   display: flex;
@@ -624,19 +666,18 @@ tr:last-child td {
   flex-shrink: 0;
 }
 
-.author-info-text {
-  color: var(--text-muted);
-}
+/* Flex children default to min-width:auto; without this the author text
+   can force the row wider than the screen. */
+.author-info-text { color: var(--text-muted); min-width: 0; overflow-wrap: anywhere; }
+.author-info-text strong { color: var(--text-primary); }
 
-.author-info-text strong {
-  color: var(--text-primary);
-}
-
-/* Responsive YouTube Embed Container */
+/* --------------------------------------------------------------------------
+   12. Media
+   -------------------------------------------------------------------------- */
 .video-container {
   position: relative;
   width: 100%;
-  padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+  padding-bottom: 56.25%;
   height: 0;
   margin: 1.75rem 0;
   border-radius: var(--radius-md);
@@ -647,25 +688,14 @@ tr:last-child td {
 
 .video-container iframe {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   border: 0;
 }
 
-/* Media Image Presentation */
-.article-image-box {
-  margin: 2rem 0;
-  text-align: center;
-}
-
-.article-image-box img {
-  margin-left: auto;
-  margin-right: auto;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
-}
+.article-image-box { margin: 2rem 0; text-align: center; min-width: 0; }
+.article-image-box img { margin-inline: auto; box-shadow: var(--shadow-md); border: 1px solid var(--border-color); }
 
 .image-caption {
   font-size: 0.85rem;
@@ -674,7 +704,9 @@ tr:last-child td {
   font-style: italic;
 }
 
-/* Sticky Bottom Promotional Bar */
+/* --------------------------------------------------------------------------
+   13. Sticky promo bar
+   -------------------------------------------------------------------------- */
 .sticky-bar {
   position: fixed;
   bottom: 0;
@@ -682,39 +714,43 @@ tr:last-child td {
   right: 0;
   background-color: rgba(15, 23, 42, 0.97);
   backdrop-filter: blur(10px);
-  border-top: 1px solid #334155;
-  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border-color);
+  padding: 0.7rem var(--gutter);
   z-index: 999;
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.5);
 }
 
 .sticky-bar-content {
   max-width: var(--container-width);
-  margin: 0 auto;
+  margin-inline: auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
 }
 
 .sticky-bar-text {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #ffffff;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
+  flex: 1 1 14rem;
 }
 
 .sticky-badge {
   background-color: var(--accent-emerald);
-  color: #000000;
-  font-size: 0.72rem;
+  color: #04310f;
+  font-size: 0.7rem;
   font-weight: 800;
-  padding: 0.15rem 0.4rem;
+  padding: 0.2rem 0.4rem;
   border-radius: var(--radius-sm);
   text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .sticky-btn {
@@ -722,24 +758,39 @@ tr:last-child td {
   color: #ffffff !important;
   font-weight: 700;
   text-decoration: none !important;
-  padding: 0.5rem 1.25rem;
+  padding: 0.7rem 1.1rem;
   border-radius: var(--radius-md);
   font-size: 0.95rem;
   box-shadow: 0 2px 8px rgba(244, 63, 94, 0.35);
   transition: transform 0.15s ease, background 0.15s ease;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.sticky-btn:hover {
-  background: linear-gradient(135deg, #fb7185, #f43f5e);
-  transform: translateY(-1px);
+.sticky-btn:hover { background: linear-gradient(135deg, #fb7185, #f43f5e); transform: translateY(-1px); }
+
+/* On phones, stack the bar so neither the text nor the button is clipped,
+   and keep it as short as possible — it is fixed over the content. */
+@media (max-width: 600px) {
+  .sticky-bar { padding: 0.55rem var(--gutter); }
+  .sticky-bar-content { justify-content: center; text-align: center; flex-direction: column; gap: 0.5rem; }
+  .sticky-bar-text {
+    flex: 0 1 auto;
+    justify-content: center;
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+  .sticky-badge { font-size: 0.65rem; padding: 0.15rem 0.35rem; }
+  .sticky-btn { width: 100%; text-align: center; padding: 0.6rem 1rem; }
 }
 
-/* Footer */
+/* --------------------------------------------------------------------------
+   14. Footer
+   -------------------------------------------------------------------------- */
 .site-footer {
   background-color: #0b0f19;
   border-top: 1px solid var(--border-color);
-  padding: 3rem 0 2rem 0;
+  padding: 3rem 0 2rem;
   margin-top: auto;
   font-size: 0.9rem;
   color: var(--text-muted);
@@ -747,37 +798,17 @@ tr:last-child td {
 
 .footer-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
   gap: 2rem;
   margin-bottom: 2rem;
 }
 
-.footer-col h4 {
-  color: #ffffff;
-  margin-top: 0;
-  margin-bottom: 0.85rem;
-  font-size: 1rem;
-}
-
-.footer-links {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.footer-links li {
-  margin-bottom: 0.5rem;
-}
-
-.footer-links a {
-  color: var(--text-muted);
-  text-decoration: none;
-  transition: color 0.15s ease;
-}
-
-.footer-links a:hover {
-  color: var(--accent-secondary);
-}
+.footer-col { min-width: 0; }
+.footer-col h4 { color: #ffffff; margin-top: 0; margin-bottom: 0.85rem; font-size: 1rem; }
+.footer-links { list-style: none; padding: 0; margin: 0; }
+.footer-links li { margin-bottom: 0.35rem; }
+.footer-links a { color: var(--text-muted); text-decoration: none; display: inline-block; padding: 0.25rem 0; }
+.footer-links a:hover { color: var(--accent-secondary); text-decoration: underline; }
 
 .footer-disclaimer-box {
   background-color: #060911;
@@ -787,45 +818,7 @@ tr:last-child td {
   margin-top: 1.5rem;
   font-size: 0.8rem;
   line-height: 1.6;
-  color: #64748b;
+  color: var(--text-faint);
 }
 
-.footer-copyright {
-  text-align: center;
-  margin-top: 2rem;
-  font-size: 0.82rem;
-  color: #64748b;
-}
-
-/* Responsive Styles */
-@media (max-width: 768px) {
-  .mobile-nav-toggle {
-    display: block;
-  }
-  
-  .nav-menu {
-    display: none;
-    flex-direction: column;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: #0f172a;
-    border-bottom: 1px solid var(--border-color);
-    padding: 1rem;
-    box-shadow: var(--shadow-lg);
-  }
-  
-  .nav-menu.is-active {
-    display: flex;
-  }
-  
-  .sticky-bar-content {
-    justify-content: center;
-    text-align: center;
-  }
-  
-  .sticky-bar-text {
-    font-size: 0.85rem;
-  }
-}
+.footer-copyright { text-align: center; margin-top: 2rem; font-size: 0.82rem; color: var(--text-faint); }

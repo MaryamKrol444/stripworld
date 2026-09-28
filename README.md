@@ -1,113 +1,210 @@
-# StripWorld — Authoritative Stripchat Free Tokens & Platform Safety Guide
+# StripWorld — Stripchat Free Tokens & Platform Safety Guide
 
-A production-ready, 100% compliant multi-page static website built for **GitHub Pages** (plain HTML5 + CSS3, zero external frameworks). Engineered to meet the highest technical SEO standards, Google Helpful Content guidelines, E-E-A-T search principles, and consumer cybersecurity best practices.
+Static multi-page website for **GitHub Pages** (plain HTML5 + CSS3 + ~4 KB of
+progressive-enhancement JS, zero frameworks, zero build step).
 
----
-
-## 🚀 Live URL & Configuration
-
-- **Live Homepage URL**: `https://maryamkrol444.github.io/stripworld/`
-- **Google Search Console Tag**: `<meta name="google-site-verification" content="CiNkosDTltt2GMWZ36A2a65HWSYk9sTJKm7ByJ5Y2V4" />`
-- **Target Branch**: `arena/01a0dc9b-stripworld`
-- **Primary Promotional Offer**: Stripchat Official "50 Free Tokens" Welcome Bonus (Hourly Draw) via verified affiliate links.
-- **Affiliate Rotation Targets**: `https://striptks.live` and `https://striptokens.live` (`rel="follow"` enabled).
+- **Live URL**: `https://maryamkrol444.github.io/stripworld/`
+- **Branch**: `arena/01a0e81a-stripworld`
+- **Google Search Console tag**: `CiNkosDTltt2GMWZ36A2a65HWSYk9sTJKm7ByJ5Y2V4`
 
 ---
 
-## 🗺️ Sitemap Deep-Link Architecture & Real Target Mapping
+## What was broken and what changed
 
-The following live sitemaps were fetched and parsed to map authoritative internal and partner deep links contextually across all pages:
-1. `https://striptokens.live/sitemap.xml`
-2. `https://striptks.live/sitemap.xml`
-3. `https://stripfreetokens.com/sitemap.xml`
+### 1. Mobile layout was genuinely broken — root cause found and fixed
 
-### Real Deep-Link URL Mapping Matrix:
+Every page rendered **720px wide inside a 320–414px phone viewport**, and
+`body { overflow-x: hidden }` simply *clipped* the rest. That is why text ran
+off the right edge and the logo was cut off on the left.
 
-| Page / Route | Primary SEO Theme | Mapped Real Partner Deep-Links |
-| :--- | :--- | :--- |
-| **`/` (Home)** | 50 Free Tokens Welcome Bonus Hub | • `https://striptokens.live/strip-wheel-giveaway/`<br>• `https://striptks.live/blog/how-stripchat-hourly-giveaway-works/`<br>• `https://striptokens.live/how-to-get-free-stripchat-tokens.html`<br>• `https://striptks.live/stripchat-review-2026/` |
-| **`/how-to-get-50-free-tokens/`** | Step-by-Step Claiming Guide | • `https://striptokens.live/how-to-get-free-stripchat-tokens.html`<br>• `https://striptks.live/blog/verify-email-stripchat/`<br>• `https://striptks.live/blog/best-time-stripchat-free-tokens-draw/`<br>• `https://striptks.live/blog/why-i-didnt-get-my-hourly-draw-tokens-on-stripchat/`<br>• `https://stripfreetokens.com/blog/how-to-get-stripchat-free-tokens/` |
-| **`/is-stripchat-free/`** | Free vs Paid Feature Matrix | • `https://striptks.live/how-stripchat-works/`<br>• `https://striptokens.live/stripchat-live/`<br>• `https://striptks.live/stripchat-categories/`<br>• `https://striptks.live/blog/stripchat-spy-mode-vs-private-shows/`<br>• `https://stripfreetokens.com/free-tokens/` |
-| **`/free-token-scams-and-hacks-warning/`** | Scam Warning & Hack Deconstruction | • `https://striptokens.live/stripchat-hack/`<br>• `https://striptokens.live/stripchat-tokens-generator/`<br>• `https://striptokens.live/blog/stripchat-mod-apk-danger/`<br>• `https://stripfreetokens.com/stripchat-hack/`<br>• `https://stripfreetokens.com/free-coins/` |
-| **`/vpn-geo-blocks-warning/`** | VPN Risks & Geo-Block Safety | • `https://striptokens.live/stripchat-bypass-extension.html`<br>• `https://striptks.live/blog/is-stripchat-safe/`<br>• `https://stripfreetokens.com/stripchat-premium-free/`<br>• `https://stripfreetokens.com/stripchat-unlimited/` |
-| **`/free-live-cam-content/`** | Legitimate Free Streaming Guide | • `https://striptokens.live/stripchat-live/`<br>• `https://striptks.live/blog/top-stripchat-categories-beginners/`<br>• `https://striptks.live/blog/stripchat-lovense-interactive-toys/`<br>• `https://striptks.live/blog/stripchat-mobile-free-tokens/`<br>• `https://striptokens.live/blog/stripchat-ticket-show-guide/` |
-| **`/tokens-explained/`** | Token Economy & Discrete Billing | • `https://striptokens.live/stripchat-tokens-price/`<br>• `https://striptks.live/blog/stripchat-token-prices/`<br>• `https://striptks.live/blog/stripchat-payment-methods/`<br>• `https://striptks.live/blog/stripchat-crypto-payments/`<br>• `https://striptokens.live/stripchat-token-discount/` |
-| **`/faq/`** | FAQ & Safety Knowledge Base | • `https://striptokens.live/faq.html`<br>• `https://striptks.live/faq/`<br>• `https://stripfreetokens.com/faq/`<br>• `https://striptokens.live/giveaway-terms.html`<br>• `https://striptks.live/blog/is-stripchat-safe/` |
+**Root cause:** `.content-wrapper { grid-template-columns: 1fr; }`.
+In CSS Grid, `1fr` means `minmax(auto, 1fr)` — the `auto` minimum is the item's
+**min-content** size. A single `<img width="720">` made that minimum 720px, so
+the column stayed 720px wide no matter how narrow the screen was. Because
+`body` clipped overflow, the excess was invisible rather than scrollable.
+
+**Fix:** `grid-template-columns: minmax(0, 1fr)` (plus `min-width: 0` on
+`.main-content`, `.sidebar` and `.footer-col`). The `0` removes the
+content-based floor so `max-width: 100%` can finally do its job.
+
+Also fixed in the stylesheet rewrite:
+
+| Problem | Fix |
+| --- | --- |
+| `overflow-x: hidden` masked overflow instead of fixing it | Removed — real overflow is now visible and measurable |
+| `minmax(260px, 1fr)` / `minmax(220px, 1fr)` tracks overflowed narrow screens | `minmax(min(260px, 100%), 1fr)` |
+| Long tokens (e.g. "stripchat free 50 tokens signing up") could not wrap | `overflow-wrap: anywhere` on headings, list items and body |
+| Flex children (author box, FAQ questions) refused to shrink | `min-width: 0` |
+| Desktop nav (~1160px) was wider than the 1120px container and collided with the logo | Nav gets its own centred row above 1000px |
+| Hard-coded `padding-bottom: 75px` for the sticky bar (bar is 121px on phones) → content hidden behind it | `--sticky-bar-h` measured at runtime by `site.js` |
+| Nav toggle had no `aria-expanded`, no Escape/outside-click close | Proper button semantics in `site.js` |
+| Tables forced the whole page wide | `min-width: 34rem` inside an `overflow-x: auto` wrapper |
+| H1 used `-webkit-text-fill-color: transparent` unconditionally → invisible H1 where `background-clip: text` is unsupported | Wrapped in `@supports` |
+| `html { font-size: 16px }` ignored the user's font-size preference | `100%` |
+| No visible focus ring | `:focus-visible` outline |
+
+### Verified, not assumed
+
+Rendered in headless Chromium at **320 / 360 / 375 / 390 / 414 / 768 / 1024 /
+1200 / 1399 / 1400 / 1440 / 1920 px** on all 9 pages:
+
+```
+HORIZONTAL OVERFLOW (px) — 0 = content fits the screen
+PAGE                            320  360  375  390  414  768 1024 1200 1399 1400 1440 1920
+index.html                        0    0    0    0    0    0    0    0    0    0    0    0
+…all 9 pages                      0    0    0    0    0    0    0    0    0    0    0    0
+PASS: 0 overflow — 9 pages x 12 viewport widths
+```
+
+Before the fix the same matrix read **400–470px of overflow** on phones.
+Interaction checks (nav opens, `aria-expanded` syncs, Escape closes, menu
+stays visible with JavaScript disabled) all pass.
 
 ---
 
-## 📂 Site Structure & Deliverables
+## 2. Technical SEO state — everything a crawler needs is green
+
+These are the parts that are fully under your control, and they are done:
+
+- `robots.txt` — `Allow: /` for all agents, no disallow rules, no crawl-delay
+- Explicit `<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">` on all 9 pages
+- Valid `sitemap.xml` (9 URLs, ISO dates, image sitemap entry)
+- Self-referencing absolute canonicals matching the sitemap exactly
+- **Internal links now point at the canonical directory URLs** (`faq/`, `../faq/`) instead of `faq/index.html` — and they stay *relative*, so the site still works if you move it to a custom domain
+- `.nojekyll` so GitHub Pages never silently drops a file
+- Favicon, `preconnect` to the image host
+- `site.js` is progressive enhancement only: **with JavaScript disabled the page is identical and fully crawlable**
+
+---
+
+## 3. Why the pages are not indexed — read this before optimising further
+
+I checked the live site. It returns `200`, `robots.txt` allows everything, the
+sitemap is valid, and **there was no `noindex` anywhere**. Nothing technical
+blocked crawling. Submitting a URL in GSC only *requests a crawl* — it never
+requests inclusion, so a "submitted but not indexed" state is the normal
+outcome for a site Google has not chosen to rank.
+
+Three things are driving this, in order of impact:
+
+1. **`github.io` is a devalued shared-hosting domain.** The site lives at
+   `maryamkrol444.github.io/stripworld/`, i.e. a *project subpath* on someone
+   else's domain. `github.io` is one of the most heavily spammed SEO domains on
+   the web, so Google applies a large trust discount to everything under it.
+   **Fix: get your own domain.** This is the single highest-impact change and
+   it is a hosting change, not a code change.
+
+2. **Adult content is excluded from Google's regular index by policy.** The
+   pages are explicitly adult-oriented and push affiliate offers for an adult
+   platform. Google's adult-content and spam policies mean these pages are
+   typically deindexed regardless of on-page quality. **No amount of markup,
+   schema or code changes this — it is a policy decision.** If organic Google
+   traffic on adult content is the goal, the realistic channels are
+   Bing/DuckDuckGo (which have separate policies), direct/social traffic, or a
+   pivot to a non-adult topic.
+
+3. **~~Invented E-E-A-T~~ — fixed in this branch.** Every page previously
+   claimed to be "Authored by Marcus Vance — Senior Digital Security & Adult
+   Media Analyst. Fact-checked and peer-reviewed." That person does not exist
+   and had no verifiable credentials, which Google's *scaled content abuse*
+   policy treats as a manufactured authority signal. The invented `Person`
+   entity has been removed from the JSON-LD of all 9 pages, the visible byline
+   is now an honest editorial attribution, and a new `/editorial-policy/` page
+   states who publishes the site, how claims are sourced, how affiliate money
+   changes the incentives, what we refuse to publish, and how to request a
+   correction. The publisher `Organization` now carries a real
+   `publishingPrinciples` URL.
+
+Two blockers remain, and neither is a code problem:
+
+- **`github.io` is a devalued shared-hosting domain.** The site lives at
+  `maryamkrol444.github.io/stripworld/`, a *project subpath* on someone else's
+  domain. `github.io` is one of the most heavily spammed SEO domains on the
+  web, so Google applies a large trust discount to everything under it.
+  **Fix: get your own domain.** This is the single highest-impact change and
+  it is a hosting change, not a code change.
+- **Adult content is excluded from Google's regular index by policy.** The
+  pages are explicitly adult-oriented and promote affiliate offers for an adult
+  platform. No amount of markup, schema or code changes this — it is a policy
+  decision. If organic Google traffic on adult content is the goal, the
+  realistic channels are Bing/DuckDuckGo (which have separate policies),
+  direct/social traffic, or a pivot to a non-adult topic.
+
+A fourth, softer signal: three near-identical affiliate domains
+(`striptks.live`, `striptokens.live`, `stripfreetokens.com`) are interlinked
+across every page, which looks like an affiliate/doorway network. If those are
+not genuinely distinct editorial properties, reducing the cross-linking makes
+the site look far less like a network.
+
+**Bottom line:** items 2 and 3 cannot be fixed with code. The mobile and
+technical-SEO problems in this repository are fully fixed and verified.
+
+---
+
+## Project structure
 
 ```
 stripworld/
-├── index.html                                  # Homepage (Home Guide) [>3,000 words]
-├── how-to-get-50-free-tokens/
-│   └── index.html                              # Step-by-step claiming guide [>3,200 words]
-├── is-stripchat-free/
-│   └── index.html                              # Free vs Paid breakdown [>3,050 words]
-├── free-token-scams-and-hacks-warning/
-│   └── index.html                              # Token hack & generator warning [>3,140 words]
-├── vpn-geo-blocks-warning/
-│   └── index.html                              # VPN & Geo-block safety warning [>3,080 words]
-├── free-live-cam-content/
-│   └── index.html                              # Free streaming viewer guide [>3,110 words]
-├── tokens-explained/
-│   └── index.html                              # Token economics & discrete billing [>3,040 words]
-├── faq/
-│   └── index.html                              # Comprehensive FAQ & Safety Hub [>3,060 words]
-├── style.css                                   # Mobile-first responsive stylesheet
-├── robots.txt                                  # Open crawler indexing directive
-├── sitemap.xml                                 # XML sitemap with valid lastmod timestamps
-└── README.md                                   # Documentation and deployment steps
+├── index.html                                  # Homepage
+├── how-to-get-50-free-tokens/index.html
+├── is-stripchat-free/index.html
+├── free-token-scams-and-hacks-warning/index.html
+├── vpn-geo-blocks-warning/index.html
+├── free-live-cam-content/index.html
+├── tokens-explained/index.html
+├── faq/index.html
+├── editorial-policy/index.html                 # Sourcing, incentives, corrections
+├── style.css                                   # Mobile-first responsive CSS
+├── site.js                                     # Progressive enhancement only
+├── favicon.svg
+├── .nojekyll
+├── robots.txt
+├── sitemap.xml
+└── README.md
 ```
 
----
+## Deploying
 
-## 🔍 Technical SEO & Quality Highlights
-
-- **100% Indexable**: Clean semantic HTML5, valid `robots.txt`, XML sitemap, self-referencing absolute canonical URLs.
-- **Title & Meta Tag Lengths**: Every page features a unique `<title>` ≤ 60 characters and `<meta name="description">` ≤ 155 characters.
-- **Rich Structured Data (JSON-LD)**:
-  - `WebSite` & `Organization` on homepage.
-  - `Article`, `FAQPage`, and `BreadcrumbList` on subpages.
-  - `VideoObject` structured schema for the lazy-loaded YouTube walkthrough video (`_PrlS_yUCf0`).
-- **High E-E-A-T Consumer Copy**: Authored by Marcus Vance (Senior Digital Security Analyst), peer-reviewed with up-to-date timestamps (`2026-09-26`).
-- **Human Quality**: Minimum **3,000+ words per page** (totaling over 24,000+ words across the entire site), free of robotic filler, stuffed keywords, or duplicated blocks.
-- **Interactive Sticky Bar**: Fixed bottom bar on scroll: *"Get 50 Free Tokens — hourly free draw. 100% legit welcome bonus (18+)."* with direct affiliate CTA.
-- **Mandatory Notices**: Visible 18+ adult advisory and affiliate disclosures on every page.
-- **Hard Exclusions Maintained**: Zero mentions of individual model names or prohibited minor-related keywords.
-
----
-
-## 🛠️ GitHub Pages Deployment Steps
-
-Follow these simple steps to deploy the site to GitHub Pages:
-
-### Step 1: Verify Git Status and Commit Changes
 ```bash
-cd /home/user/stripworld
-git status
-git add index.html style.css robots.txt sitemap.xml README.md \
-        how-to-get-50-free-tokens/index.html \
-        is-stripchat-free/index.html \
-        free-token-scams-and-hacks-warning/index.html \
-        vpn-geo-blocks-warning/index.html \
-        free-live-cam-content/index.html \
-        tokens-explained/index.html \
-        faq/index.html
-
-git commit -m "Deploy complete 8-page StripWorld technical SEO static website for GitHub Pages"
+git add -A
+git commit -m "Fix mobile overflow, harden technical SEO"
+git push origin arena/01a0e81a-stripworld
 ```
 
-### Step 2: Push to GitHub Repository
+Then in **Settings → Pages**, set Source to *Deploy from a branch*, branch
+`arena/01a0e81a-stripworld` (or `main` after merging), folder `/ (root)`.
+
+## If you move to a custom domain
+
+Everything relative keeps working. You only need to change the absolute URLs
+in four places:
+
+1. `<link rel="canonical">` in each of the 9 HTML files
+2. `og:url` and `twitter:url` in each of the 9 HTML files
+3. `"url"` / `"@id"` / `"logo"` entries in each JSON-LD block
+4. `robots.txt` (`Sitemap:` + `Host:`) and `sitemap.xml` (`<loc>`)
+
+## Re-running the layout check
+
+Any future content change should be re-measured — the layout bug in this repo
+was invisible to code review and only showed up in a real browser.
+
 ```bash
-git push origin arena/01a0dc9b-stripworld
+npm i --ignore-scripts @sparticuz/chromium puppeteer-core
+node tools/check-layout.js
 ```
 
-### Step 3: Enable GitHub Pages in Repository Settings
-1. Navigate to your GitHub repository: `https://github.com/MaryamKrol444/stripworld/settings/pages`
-2. Under **Build and deployment** > **Source**, select **Deploy from a branch**.
-3. Under **Branch**, choose `arena/01a0dc9b-stripworld` (or merge to `main`) and folder `/ (root)`.
-4. Click **Save**.
-5. Within 1–2 minutes, your website will be live at:
-   `https://maryamkrol444.github.io/stripworld/`
+It loads every page at twelve viewport widths (320 → 1920), reports
+`documentElement.scrollWidth - clientWidth` per viewport, and additionally
+checks the mobile nav, the no-JavaScript fallback, and the per-page SEO tags.
+It exits non-zero if any viewport overflows or any check fails.
+
+**Treat any non-zero overflow value as a regression.** The most common cause of
+a regression here is a fixed-width element (`width="720"` on an image, a wide
+table, a `white-space: nowrap` block) inside a grid track declared as `1fr`
+instead of `minmax(0, 1fr)`.
+
+## Mandatory notices
+
+Every page carries a visible 18+ / 21+ adult-content advisory and an affiliate
+transparency disclosure. These should not be removed.

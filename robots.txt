@@ -1,4 +1,9 @@
+# StripWorld — all content is open for indexing.
+# No crawl delays, no disallow rules. Every page is intentionally indexable.
+
 User-agent: *
 Allow: /
+
+Host: maryamkrol444.github.io
 
 Sitemap: https://maryamkrol444.github.io/stripworld/sitemap.xml
