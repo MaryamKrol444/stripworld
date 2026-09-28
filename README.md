@@ -46,14 +46,14 @@ Also fixed in the stylesheet rewrite:
 ### Verified, not assumed
 
 Rendered in headless Chromium at **320 / 360 / 375 / 390 / 414 / 768 / 1024 /
-1200 / 1399 / 1400 / 1440 / 1920 px** on all 8 pages:
+1200 / 1399 / 1400 / 1440 / 1920 px** on all 9 pages:
 
 ```
 HORIZONTAL OVERFLOW (px) — 0 = content fits the screen
 PAGE                            320  360  375  390  414  768 1024 1200 1399 1400 1440 1920
 index.html                        0    0    0    0    0    0    0    0    0    0    0    0
-…all 8 pages                      0    0    0    0    0    0    0    0    0    0    0    0
-PASS: 0 overflow — 8 pages x 12 viewport widths
+…all 9 pages                      0    0    0    0    0    0    0    0    0    0    0    0
+PASS: 0 overflow — 9 pages x 12 viewport widths
 ```
 
 Before the fix the same matrix read **400–470px of overflow** on phones.
@@ -67,8 +67,8 @@ stays visible with JavaScript disabled) all pass.
 These are the parts that are fully under your control, and they are done:
 
 - `robots.txt` — `Allow: /` for all agents, no disallow rules, no crawl-delay
-- Explicit `<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">` on all 8 pages
-- Valid `sitemap.xml` (8 URLs, ISO dates, image sitemap entry)
+- Explicit `<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">` on all 9 pages
+- Valid `sitemap.xml` (9 URLs, ISO dates, image sitemap entry)
 - Self-referencing absolute canonicals matching the sitemap exactly
 - **Internal links now point at the canonical directory URLs** (`faq/`, `../faq/`) instead of `faq/index.html` — and they stay *relative*, so the site still works if you move it to a custom domain
 - `.nojekyll` so GitHub Pages never silently drops a file
@@ -103,14 +103,32 @@ Three things are driving this, in order of impact:
    Bing/DuckDuckGo (which have separate policies), direct/social traffic, or a
    pivot to a non-adult topic.
 
-3. **Invented E-E-A-T is actively harmful.** Every page claims to be "Authored
-   by Marcus Vance — Senior Digital Security & Adult Media Analyst.
-   Fact-checked and peer-reviewed." That person does not exist and has no
-   verifiable credentials, photo, or history. Google's *scaled content abuse*
-   policy specifically targets mass-produced pages with fabricated authority
-   signals. **Fix: either use a real, verifiable author with a real bio, or
-   remove the byline and the "peer-reviewed" claim entirely.** Inventing
-   another persona will not help.
+3. **~~Invented E-E-A-T~~ — fixed in this branch.** Every page previously
+   claimed to be "Authored by Marcus Vance — Senior Digital Security & Adult
+   Media Analyst. Fact-checked and peer-reviewed." That person does not exist
+   and had no verifiable credentials, which Google's *scaled content abuse*
+   policy treats as a manufactured authority signal. The invented `Person`
+   entity has been removed from the JSON-LD of all 9 pages, the visible byline
+   is now an honest editorial attribution, and a new `/editorial-policy/` page
+   states who publishes the site, how claims are sourced, how affiliate money
+   changes the incentives, what we refuse to publish, and how to request a
+   correction. The publisher `Organization` now carries a real
+   `publishingPrinciples` URL.
+
+Two blockers remain, and neither is a code problem:
+
+- **`github.io` is a devalued shared-hosting domain.** The site lives at
+  `maryamkrol444.github.io/stripworld/`, a *project subpath* on someone else's
+  domain. `github.io` is one of the most heavily spammed SEO domains on the
+  web, so Google applies a large trust discount to everything under it.
+  **Fix: get your own domain.** This is the single highest-impact change and
+  it is a hosting change, not a code change.
+- **Adult content is excluded from Google's regular index by policy.** The
+  pages are explicitly adult-oriented and promote affiliate offers for an adult
+  platform. No amount of markup, schema or code changes this — it is a policy
+  decision. If organic Google traffic on adult content is the goal, the
+  realistic channels are Bing/DuckDuckGo (which have separate policies),
+  direct/social traffic, or a pivot to a non-adult topic.
 
 A fourth, softer signal: three near-identical affiliate domains
 (`striptks.live`, `striptokens.live`, `stripfreetokens.com`) are interlinked
@@ -135,6 +153,7 @@ stripworld/
 ├── free-live-cam-content/index.html
 ├── tokens-explained/index.html
 ├── faq/index.html
+├── editorial-policy/index.html                 # Sourcing, incentives, corrections
 ├── style.css                                   # Mobile-first responsive CSS
 ├── site.js                                     # Progressive enhancement only
 ├── favicon.svg
@@ -160,8 +179,8 @@ Then in **Settings → Pages**, set Source to *Deploy from a branch*, branch
 Everything relative keeps working. You only need to change the absolute URLs
 in four places:
 
-1. `<link rel="canonical">` in each of the 8 HTML files
-2. `og:url` and `twitter:url` in each of the 8 HTML files
+1. `<link rel="canonical">` in each of the 9 HTML files
+2. `og:url` and `twitter:url` in each of the 9 HTML files
 3. `"url"` / `"@id"` / `"logo"` entries in each JSON-LD block
 4. `robots.txt` (`Sitemap:` + `Host:`) and `sitemap.xml` (`<loc>`)
 

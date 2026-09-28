@@ -4,7 +4,7 @@ const path = require('path');
 const chromium = require('@sparticuz/chromium');
 const puppeteer = require('puppeteer-core');
 
-const ROOT = require("path").resolve(__dirname, "..");
+const ROOT = '/home/user/stripworld';
 const WIDTHS = [320, 360, 375, 390, 414, 768, 1024, 1200, 1399, 1400, 1440, 1920];
 const PAGES = [
   'index.html',
@@ -15,6 +15,7 @@ const PAGES = [
   'free-live-cam-content/index.html',
   'tokens-explained/index.html',
   'faq/index.html',
+  'editorial-policy/index.html',
 ];
 const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml' };
 
