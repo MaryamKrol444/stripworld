@@ -167,10 +167,23 @@ in four places:
 
 ## Re-running the layout check
 
-Any future content change should be re-measured. The audit used to produce the
-table above is a standalone Puppeteer script that loads each page at twelve
-widths and reports `documentElement.scrollWidth - clientWidth` per viewport.
-Treat any non-zero value as a regression.
+Any future content change should be re-measured — the layout bug in this repo
+was invisible to code review and only showed up in a real browser.
+
+```bash
+npm i --ignore-scripts @sparticuz/chromium puppeteer-core
+node tools/check-layout.js
+```
+
+It loads every page at twelve viewport widths (320 → 1920), reports
+`documentElement.scrollWidth - clientWidth` per viewport, and additionally
+checks the mobile nav, the no-JavaScript fallback, and the per-page SEO tags.
+It exits non-zero if any viewport overflows or any check fails.
+
+**Treat any non-zero overflow value as a regression.** The most common cause of
+a regression here is a fixed-width element (`width="720"` on an image, a wide
+table, a `white-space: nowrap` block) inside a grid track declared as `1fr`
+instead of `minmax(0, 1fr)`.
 
 ## Mandatory notices
 
